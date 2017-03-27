@@ -1,0 +1,212 @@
+---
+title: "ChickR - ggplot2"
+author: "S Bashir (ilustat.com)"
+date: '`r format(Sys.time(), "%d %B %Y")`'
+output:
+  html_document:
+    highlight: default
+    theme: cerulean
+  pdf_document:
+    fig_width: 6
+geometry: margin=1in
+fontsize: 11pt
+---
+
+```{r setup, include=FALSE}
+library(svglite)
+knitr::opts_chunk$set(
+  echo = TRUE
+#  ,dev = "svglite"
+)
+```
+
+## ChickR
+
+Welcome to ChickR
+
+### Setup
+
+It is assumed that the latest version of [R](www.r-project.og) is installed on your computer. It is recommended that you install and use [Rstudio IDE](https://www.rstudio.com/products/rstudio/) (integrated development environment) for the ChickR series. Other IDEs should work fine too. The first step is to install some packages (*addons*/*apps*) by typing the following in the console:
+```{r packages, echo=TRUE, eval=FALSE}
+install.packages("dplyr")
+install.packages("ggplot2")
+```
+You only need to install packages **once**.  Without going into details, we next need to *activate* some of these packages to use by typing the following in the console:
+```{r libraries, message=FALSE, results='hide'}
+library(dplyr)
+library(ggplot2)
+```
+
+### Chick Weight Data Objective
+
+Our objective is to investigate the effect of four different diets on the chick weights over a 21 day period. 
+
+### Chick Weight Data
+
+The `ChickWeight` data is one of the many datasets included as part of R and are from a weight gain experiment for chicks. Let's look at the data:
+```{r ChickWeightData}
+data("ChickWeight")
+glimpse(ChickWeight)
+```
+We can see that there are 4 variables and 578 observations. Each chick in the experiment is uniquely identified by the `Chick` variable (**R is case sensitive**) and they are randomly assigned to be fed one of four diets (`Diet`). Their `weight` (in grams) is measured over `Time` (from day zero to day 21). 
+
+```{r headCW}
+head(ChickWeight)
+tail(ChickWeight)
+head(select(ChickWeight, Chick, Diet, Time, weight))
+tail(select(ChickWeight, Chick, Diet, Time, weight))
+```
+
+### Graphical Exploration
+
+We will start by looking the raw data graphically using the `ggplot2` package using some relatively simple plots. At this stage don't worry too much about the details of the commands just try to build your own understanding.
+```{r ggplot01, out.width = "70%", fig.asp=0.618, fig.align='center'}
+ggplot(ChickWeight, aes(Time, weight)) + geom_point()
+```
+
+From the above ***scatter plot*** we can see that in general chick weights (vertical axis) increase over time (horizontal axis) however it does not tell us much about the effect of diet. Let's identify the different diets using some colour coding.
+
+```{r ggplot02, out.width = "70%", fig.asp=0.618, fig.align='center'}
+ggplot(ChickWeight, aes(Time, weight, colour = Diet)) + geom_point()
+```
+
+This is better but it is hard to make out the real effect of the diet as there are many overlapping points. We can introduce some jitter (i.e. *shake* the points to identify the overlapping points).
+
+```{r ggplot03, out.width = "70%", fig.asp=0.618, fig.align='center'}
+ggplot(ChickWeight, aes(Time, weight, colour = Diet)) + geom_jitter()
+```
+
+Overlapping is not a major issue here but this looks like four hives of bees spreading out so still not easy to see what the effect of diet. Perhaps we can plot the each diet in a separate scatter plot.
+
+```{r ggplot04, out.width = "70%", fig.asp=0.618, fig.align='center'}
+ggplot(ChickWeight, aes(Time, weight)) + geom_point() + facet_wrap(~Diet)
+```
+
+Perhaps it will look better with a bit of colour
+
+```{r ggplot05, out.width = "70%", fig.asp=0.618, fig.align='center'}
+ggplot(ChickWeight, aes(Time, weight, colour = Diet)) + geom_point() + facet_wrap(~Diet)
+```
+
+We don't need to have a legend as the `Diet` number is already given at the top of each plot so we can remove it. 
+```{r ggplot05a, out.width = "70%", fig.asp=0.618, fig.align='center'}
+ggplot(ChickWeight, aes(Time, weight, colour = Diet)) + geom_point(show.legend = FALSE) + 
+  facet_wrap(~Diet)
+```
+
+Perhaps it could help to identify each chick using a differenct colour.
+```{r ggplot06, out.width = "70%", fig.asp=0.618, fig.align='center'}
+ggplot(ChickWeight, aes(Time, weight, colour = Chick)) + geom_point() + 
+  facet_wrap(~Diet)
+```
+
+It sort of helps but there is still a lot of information to process and knowing the chick number for each colour does not really enhance understand so we can remove the legend. 
+```{r ggplot06a, out.width = "70%", fig.asp=0.618, fig.align='center'}
+ggplot(ChickWeight, aes(Time, weight, colour = Chick)) + geom_point(show.legend = FALSE) + facet_wrap(~Diet)
+```
+
+It can be hard to identify individual chicks based on the colour so let's use `lines` instead of `points`.
+
+```{r ggplot07, out.width = "70%", fig.asp=0.618, fig.align='center'}
+ggplot(ChickWeight, aes(Time, weight)) + geom_line() + facet_wrap(~Diet)
+
+```
+Whoops it is not what we expected. We want one line for each chick. Let's try again.
+```{r ggplot08, out.width = "70%", fig.asp=0.618, fig.align='center'}
+ggplot(ChickWeight, aes(Time, weight, colour = Chick)) + geom_line() + 
+  facet_wrap(~Diet)
+```
+
+This is better but we will remove the legend.
+```{r ggplot09, out.width = "70%", fig.asp=0.618, fig.align='center'}
+ggplot(ChickWeight, aes(Time, weight, group = Chick)) + geom_line() + 
+  facet_wrap(~Diet)
+```
+
+Oh... but now we've lost the colours. 
+```{r ggplot10, out.width = "70%", fig.asp=0.618, fig.align='center'}
+ggplot(ChickWeight, aes(Time, weight, group = Chick, colour=Chick)) + geom_line() + 
+  facet_wrap(~Diet)
+```
+
+Perhaps the aesthetics (`aes`) need to be in the `geom_line` part.
+
+```{r ggplot11, out.width = "70%", fig.asp=0.618, fig.align='center'}
+ggplot(ChickWeight, aes(Time, weight)) + geom_line(aes(group = Chick, colour=Chick)) + 
+  facet_wrap(~Diet)
+```
+
+Black and white again but no legend. Yay. Let's upgrade to colour.
+
+```{r ggplot12, out.width = "70%", fig.asp=0.618, fig.align='center'}
+ggplot(ChickWeight, aes(Time, weight)) + geom_line(aes(colour = Chick)) + facet_wrap(~Diet)
+```
+What is going on??? Colour but the legend is back. Mixing `colour` and `group` in `geom_line`.
+
+```{r ggplot14 , out.width = "70%", fig.asp=0.618, fig.align='center'}
+ggplot(ChickWeight, aes(Time, weight)) + geom_line(aes(colour = Chick), show.legend = FALSE) + 
+  facet_wrap(~Diet)
+```
+This gives us a better idea of how each chick performs. We also notice that some chicks don't have measurement up to day 21 (e.g. for diet 1 there is a chick who does not have measurements after day 12). Perhaps if we add points it will be clearer.
+```{r ggplot15, out.width = "70%", fig.asp=0.618, fig.align='center'}
+ggplot(ChickWeight, aes(Time, weight)) + geom_line(aes(colour = Chick), show.legend = FALSE) + 
+  geom_point() + facet_wrap(~Diet)
+```
+
+The points should be the same colour as the lines so 
+```{r ggplot16, out.width = "70%", fig.asp=0.618, fig.align='center'}
+ggplot(ChickWeight, aes(Time, weight)) + geom_line(aes(colour = Chick), show.legend = FALSE) + 
+  geom_point(aes(colour = Chick)) + facet_wrap(~Diet)
+```
+
+There are two problems here, the legend is back and the duplication of `aes(colour = Chick)`. Let's move it back to the `aes` in the `ggplot` part.
+```{r ggplot17, out.width = "70%", fig.asp=0.618, fig.align='center'}
+ggplot(ChickWeight, aes(Time, weight, colour = Chick)) + geom_line() + geom_point() + 
+  facet_wrap(~Diet)
+```
+
+Removing the legend yet again!
+```{r ggplot18, out.width = "70%", fig.asp=0.618, fig.align='center'}
+ggplot(ChickWeight, aes(Time, weight, colour = Chick)) + geom_line(show.legend = FALSE) + 
+  geom_point(show.legend = FALSE) + facet_wrap(~Diet)
+```
+This plot looks good enough for our initial assessments. Chicks gain weight over time for each of the diets. It seems although diet 4 has less variabilty than the others. Diet 3 could be the one that has the most weight gain over time but we would need to investigate the data further using summary statistics and some statistical modelling to confirm that.
+
+What do they look like in one graph (by removing `facet_wrap`).
+```{r ggplot19, out.width = "70%", fig.asp=0.618, fig.align='center'}
+ggplot(ChickWeight, aes(Time, weight, colour = Chick)) + geom_line(show.legend = FALSE) + 
+  geom_point(show.legend = FALSE)
+```
+
+A spaghetti mess that does not tell us anything about the `diet`. Using `Diet` for `colour` instead of `Chick`.
+```{r ggplot20, out.width = "70%", fig.asp=0.618, fig.align='center'}
+ggplot(ChickWeight, aes(Time, weight, colour = Diet)) + geom_line(show.legend = FALSE) + 
+  geom_point(show.legend = FALSE)
+```
+
+Not what was hoped for. Bring back the `Chick` variable to identify the unique lines and use `Diet` as the colour.
+```{r ggplot21, out.width = "70%", fig.asp=0.618, fig.align='center'}
+ggplot(ChickWeight, aes(Time, weight, colour = Diet, group=Chick)) + 
+  geom_line(show.legend = FALSE) + 
+  geom_point(show.legend = FALSE)
+```
+
+As the colour coding is diet it makes sense to bring back the legend by removing both `show.legend = FALSE`
+```{r ggplot22, out.width = "70%", fig.asp=0.618, fig.align='center'}
+ggplot(ChickWeight, aes(Time, weight, colour = Diet, group=Chick)) + 
+  geom_line() + geom_point()
+```
+
+Move the legend to the bottom of the graph.
+```{r ggplot23, out.width = "70%", fig.asp=0.618, fig.align='center'}
+ggplot(ChickWeight, aes(Time, weight, colour = Diet, group=Chick)) + geom_line() + 
+  geom_point() + theme(legend.position = "bottom")
+```
+
+
+## Summary
+
+The objective is to "*investigate the effect of four different diets on the chick weights over a 21 day period*" using the chick weight (`ChickWeight`) dataset. We looked at different plots that represented the weight on the vertical axis and the time on the horizontal axis. `ggplot2` allowed us to plot different colours for the diet and/or split the data into four plots, one for each diet. 
+
+
+
